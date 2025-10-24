@@ -1,0 +1,227 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type to bump'
+        required: false
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+      source_branch:
+        description: 'Source branch to create the release from'
+        required: false
+        default: 'develop'
+
+permissions:
+  contents: write
+
+jobs:
+  prepare_release:
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.set_output.outputs.new_version }}
+    steps:
+      - name: Checkout repository (full)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine current version and bump
+        id: set_version
+        run: |
+          set -euo pipefail
+          TYPE="${{ github.event.inputs.release_type || 'patch' }}"
+          SRC="${{ github.event.inputs.source_branch || 'develop' }}"
+          # fetch branches and tags
+          git fetch --prune --unshallow || true
+          git fetch origin +refs/heads/*:refs/remotes/origin/* --tags
+
+          # get current version from VERSION or from latest tag on source
+          if [ -f VERSION ]; then
+            CUR_VER=$(sed -E 's/[[:space:]]*\[skip ci\].*$//' VERSION | tr -d '[:space:]')
+          else
+            CUR_VER=$(git describe --tags --abbrev=0 "origin/${SRC}" 2>/dev/null || echo "0.0.0")
+          fi
+
+          # normalize
+          CUR_VER=$(echo "$CUR_VER" | sed -E 's/^v//' )
+          if ! echo "$CUR_VER" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Current version ('$CUR_VER') is invalid. Using 0.0.0"
+            CUR_VER="0.0.0"
+          fi
+
+          IFS='.' read -r MAJ MIN PAT <<< "$CUR_VER"
+
+          case "$TYPE" in
+            major)
+              MAJ=$((MAJ + 1)); MIN=0; PAT=0;;
+            minor)
+              MIN=$((MIN + 1)); PAT=0;;
+            *)
+              PAT=$((PAT + 1));;
+          esac
+
+          NEW_VER="${MAJ}.${MIN}.${PAT}"
+          echo "Bumped version: $CUR_VER -> $NEW_VER"
+          echo "source_branch=${SRC}" >> "$GITHUB_OUTPUT"
+          echo "new_version=${NEW_VER}" >> "$GITHUB_OUTPUT"
+
+          # export for use below
+          echo "NEW_VER=$NEW_VER" > /tmp/release_vars
+          echo "SRC=$SRC" >> /tmp/release_vars
+
+      - name: Create or validate release branch and push VERSION
+        run: |
+          set -euo pipefail
+          source /tmp/release_vars
+          RELEASE_BRANCH="release/${NEW_VER}"
+          SRC="${SRC}"
+
+          # check if release branch exists on origin
+          if git ls-remote --heads origin "${RELEASE_BRANCH}" | grep -q "${RELEASE_BRANCH}"; then
+            echo "Release branch ${RELEASE_BRANCH} already exists on origin."
+            # compare the tip of origin/RELEASE_BRANCH and origin/SRC
+            git fetch origin "${RELEASE_BRANCH}:${RELEASE_BRANCH}-remote" --no-tags
+            git fetch origin "${SRC}:${SRC}-remote" --no-tags
+            REV_RELEASE=$(git rev-parse "${RELEASE_BRANCH}-remote")
+            REV_SOURCE=$(git rev-parse "${SRC}-remote")
+            if [ "$REV_RELEASE" = "$REV_SOURCE" ]; then
+              echo "Existing release branch was created from the same source (${SRC}). Continuing."
+            else
+              echo "Release branch ${RELEASE_BRANCH} exists but was created from a different source. Failing."
+              exit 1
+            fi
+            # checkout the existing release branch locally
+            git checkout -B "${RELEASE_BRANCH}" "origin/${RELEASE_BRANCH}"
+          else
+            echo "Creating branch ${RELEASE_BRANCH} from origin/${SRC}"
+            git fetch origin "${SRC}:${SRC}-remote"
+            git checkout -b "${RELEASE_BRANCH}" "origin/${SRC}"
+          fi
+
+          # update VERSION file with [skip ci]
+          printf "%s [skip ci]\n" "${NEW_VER}" > VERSION
+          if git status --porcelain | grep -q '^'; then
+            git add VERSION
+            git commit -m "chore(release): ${NEW_VER} [skip ci]" || true
+            git push --set-upstream origin "${RELEASE_BRANCH}"
+          else
+            echo "No changes to commit (VERSION unchanged)."
+          fi
+
+      - name: expose new_version output
+        id: expose
+        run: |
+          source /tmp/release_vars
+          echo "new_version=${NEW_VER}" >> "$GITHUB_OUTPUT"
+          echo "source_branch=${SRC}" >> "$GITHUB_OUTPUT"
+
+  deploy_staging:
+    needs: prepare_release
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Announce deploy stage
+        run: |
+          NEW_VER="${{ needs.prepare_release.outputs.new_version }}"
+          echo "Deploy Release ${NEW_VER} - STAGE"
+          echo "waiting for QA approval - STAGE"
+      # The job will pause in the UI waiting for environment reviewers to approve.
+      # Configure environment 'staging' in repo settings with required reviewers.
+
+  deploy_prod:
+    needs: deploy_staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Announce prod deploy
+        run: |
+          NEW_VER="${{ needs.prepare_release.outputs.new_version }}"
+          echo "Deploy Release ${NEW_VER} - PROD"
+          echo "waiting for QA approval - PROD"
+      # The job will pause in the UI waiting for environment reviewers to approve.
+      # Configure environment 'production' in repo settings with required reviewers.
+
+  finalize_release:
+    needs: deploy_prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all
+        run: git fetch --prune --unshallow || true && git fetch origin +refs/heads/*:refs/remotes/origin/* --tags
+
+      - name: Create GitHub release with notes
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          NEW_VER="${{ needs.prepare_release.outputs.new_version }}"
+          SRC="${{ needs.prepare_release.outputs.source_branch }}"
+          RELEASE_BRANCH="origin/release/${NEW_VER}"
+
+          # determine last tag on source branch
+          LAST_TAG=$(git describe --tags --abbrev=0 "origin/${SRC}" 2>/dev/null || true)
+          if [ -n "$LAST_TAG" ]; then
+            RANGE="${LAST_TAG}..origin/${SRC}"
+          else
+            RANGE="origin/${SRC}"
+          fi
+
+          # gather commit list
+          NOTES=$(git --no-pager log --pretty=format:'- %s (%h)' ${RANGE} || true)
+          if [ -z "$NOTES" ]; then
+            NOTES="Release ${NEW_VER}"
+          fi
+
+          # create release
+          gh_release_payload=$(printf '{"tag_name":"v%s","name":"Release %s","body":"%s","draft":false,"prerelease":false}' "${NEW_VER}" "${NEW_VER}" "$(echo "$NOTES" | sed 's/"/\\"/g')")
+          # Use actions/create-release if available, otherwise use gh (but gh may not be installed).
+          # Use curl to GitHub API:
+          API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases"
+          curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" -H "Content-Type: application/json" -d "${gh_release_payload}" "${API_URL}" > /tmp/release_resp.json
+          cat /tmp/release_resp.json
+          echo "Release created for v${NEW_VER}"
+
+      - name: Merge release into main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          NEW_VER="${{ needs.prepare_release.outputs.new_version }}"
+          RELEASE_BRANCH="origin/release/${NEW_VER}"
+
+          # Merge into main
+          git checkout main
+          git pull origin main
+          # Merge the remote release branch
+          git merge --no-ff "${RELEASE_BRANCH}" -m "chore(release): merge release/${NEW_VER} into main" || true
+          git push origin main
+
+      - name: Merge release into develop
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          NEW_VER="${{ needs.prepare_release.outputs.new_version }}"
+          RELEASE_BRANCH="origin/release/${NEW_VER}"
+
+          # Merge into develop
+          git checkout develop || git checkout -b develop origin/develop
+          git pull origin develop || true
+          git merge --no-ff "${RELEASE_BRANCH}" -m "chore(release): merge release/${NEW_VER} into develop" || true
+          git push origin develop
