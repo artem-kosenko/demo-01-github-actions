@@ -1,4 +1,4 @@
-name: Java REST API CI/CD
+name: Java REST API CI/CD (Docker Multistage)
 
 on:
   push:
@@ -16,68 +16,27 @@ on:
 
 jobs:
   build:
-    name: Build & Test
-    runs-on: self-hosted   # запуск на локальном runner
-    defaults:
-      run:
-        working-directory: templates/java-rest-api
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Build with Maven
-        run: mvn -B clean package
-
-      - name: Run unit tests
-        run: mvn test
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: java-rest-api-jar
-          path: target/*.jar
-
-  deploy:
-    name: Deploy to DEV
+    name: Build, Test & Package Docker
     runs-on: self-hosted
-    needs: build
-    if: github.ref == 'refs/heads/develop'
-    defaults:
-      run:
-        working-directory: templates/java-rest-api
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Download built artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: java-rest-api-jar
-          path: target/
 
       - name: Build Docker image
-        run: docker build -t my-java-rest-api:dev .
+        run: docker build -t my-java-rest-api:latest templates/java-rest-api
 
-      - name: Deploy to DEV environment
-        env:
-          DEV_SERVER: ${{ secrets.DEV_SERVER }}
-          DEV_SSH_KEY: ${{ secrets.DEV_SSH_KEY }}
-        run: |
-          echo "Deploying to DEV..."
-          # Example deployment commands:
-          # scp -i "$DEV_SSH_KEY" target/*.jar ubuntu@$DEV_SERVER:/opt/app/
-          # ssh -i "$DEV_SSH_KEY" ubuntu@$DEV_SERVER 'sudo systemctl restart myapp'
+  # deploy:
+  #   name: Deploy to DEV
+  #   runs-on: self-hosted
+  #   needs: build
+  #   if: github.ref == 'refs/heads/develop'
+
+  #   steps:
+  #     - name: Deploy Docker image
+  #       env:
+  #         DEV_SERVER: ${{ secrets.DEV_SERVER }}
+  #         DEV_SSH_KEY: ${{ secrets.DEV_SSH_KEY }}
+  #       run: |
+  #         docker tag my-java-rest-api:latest $DEV_SERVER/my-java-rest-api:dev
+  #         # Example: push to private registry or scp to server
