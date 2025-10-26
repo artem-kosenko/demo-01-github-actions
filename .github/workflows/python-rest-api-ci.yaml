@@ -1,0 +1,39 @@
+name: Python REST API CI
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "templates/python-rest-api/**"
+      - ".github/workflows/python-rest-api-ci.yaml"
+
+jobs:
+  test:
+    runs-on: self-hosted
+    name: Build and Test Python App
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build and test Docker image
+        run: |
+          docker build \
+            --target build \
+            -t python-rest-api:test \
+            templates/python-rest-api
+
+  build:
+    runs-on: self-hosted
+    needs: test
+    name: Build Runtime Docker Image
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build final Docker image
+        run: |
+          docker build \
+            --target runtime \
+            -t python-rest-api:latest \
+            templates/python-rest-api
