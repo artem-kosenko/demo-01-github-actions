@@ -1,0 +1,35 @@
+name: Python REST API CI
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "templates/python-rest-api/**"
+      - ".github/workflows/python-rest-api-ci.yaml"
+
+jobs:
+  build-test:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r templates/python-rest-api/requirements.txt
+
+      - name: Run tests
+        run: |
+          # example test
+          python -m unittest discover templates/python-rest-api/tests
+
+      - name: Build Docker image
+        run: |
+          docker build -t python-rest-api:latest templates/python-rest-api
