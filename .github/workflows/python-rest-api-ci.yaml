@@ -9,7 +9,6 @@ on:
       - ".github/workflows/python-rest-api-ci.yaml"
 
 jobs:
-jobs:
   test:
     runs-on: self-hosted
     name: Build and Test Python App
