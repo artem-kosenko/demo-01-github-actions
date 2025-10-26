@@ -1,0 +1,31 @@
+name: Java REST API Helm Chart CI
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - ".github/workflows/python-rest-api-chart-ci.yaml"
+      - 'templates/python-rest-api/charts/**'
+  pull_request:
+    paths:
+      - ".github/workflows/python-rest-api-chart-ci.yaml"
+      - 'templates/python-rest-api/charts/**'
+
+jobs:
+  lint:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.2
+
+      - name: Helm lint
+        run: helm lint templates/python-rest-api/charts/python-rest-api
+
+      - name: Helm template render
+        run: helm template python-rest-api templates/python-rest-api/charts/python-rest-api --debug
