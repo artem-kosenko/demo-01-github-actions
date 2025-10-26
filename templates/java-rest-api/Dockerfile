@@ -1,14 +1,13 @@
-FROM amazoncorretto:17-alpine AS build
+# Build stage
+FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
-
-RUN apk add --no-cache maven
 COPY pom.xml .
 COPY src ./src
-RUN mvn -B clean package
+RUN ./mvnw clean package spring-boot:repackage
 
-FROM amazoncorretto:17-alpine AS runtime
+# Runtime stage
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-
+COPY --from=build /app/target/demo-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java","-jar","/app/app.jar"]
