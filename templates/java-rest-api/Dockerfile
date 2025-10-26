@@ -1,9 +1,6 @@
 # Build stage
-FROM amazoncorretto:17 AS build
+FROM maven:3.9.3-eclipse-temurin-17 AS build
 WORKDIR /app
-
-# Install Maven
-RUN yum install -y maven && yum clean all
 
 # Copy project files
 COPY pom.xml .
@@ -21,5 +18,4 @@ COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
-# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
