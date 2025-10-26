@@ -5,11 +5,13 @@ on:
     branches:
       - '**'
     paths:
+      - ".github/workflows/java-rest-api-ci.yaml"
       - 'templates/java-rest-api/src/**'
       - 'templates/java-rest-api/pom.xml'
       - 'templates/java-rest-api/Dockerfile'
   pull_request:
     paths:
+      - ".github/workflows/java-rest-api-ci.yaml"
       - 'templates/java-rest-api/src/**'
       - 'templates/java-rest-api/pom.xml'
       - 'templates/java-rest-api/Dockerfile'

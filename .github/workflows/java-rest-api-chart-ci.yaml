@@ -5,9 +5,11 @@ on:
     branches:
       - '**'
     paths:
+      - ".github/workflows/java-rest-api-chart-ci.yaml"
       - 'templates/java-rest-api/charts/**'
   pull_request:
     paths:
+      - ".github/workflows/java-rest-api-chart-ci.yaml"
       - 'templates/java-rest-api/charts/**'
 
 jobs:
