@@ -43,8 +43,8 @@ spec:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          command: ["java"]
-          args: ["-jar", "/app/app.jar"]
+          # command: ["java"]
+          # args: ["-jar", "/app/app.jar"]
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
