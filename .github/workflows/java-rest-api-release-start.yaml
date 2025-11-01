@@ -1,66 +1,87 @@
-name: Start Release (Docker)
+name: Start Java Release
 
 on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: "Type of release"
+        description: "Select release type"
         required: true
         type: choice
-        options: [patch, minor, major]
+        options:
+          - major
+          - minor
+          - patch
 
 jobs:
-  prepare:
+  start_release:
     runs-on: self-hosted
+    env:
+      PROJECT_DIR: templates/java-rest-api
+
     container:
-      image: maven:3.9.9-eclipse-temurin-17
-      env:
-        MAVEN_OPTS: "-Dmaven.repo.local=/root/.m2/repository"
+      image: maven:3.9-eclipse-temurin-17
 
     steps:
-      - name: Checkout develop branch
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: develop
           fetch-depth: 0
 
-      - name: Configure Git identity
+      - name: Configure Git user
         run: |
-          git config --global user.email "ci@github.actions"
           git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
 
-      - name: Determine new version
+      - name: Determine next version
         id: version
-        working-directory: templates/java-rest-api
         run: |
-          current=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "Current version: $current"
-          base=${current%-SNAPSHOT}
-          IFS='.' read -r major minor patch <<< "$base"
+          cd "$PROJECT_DIR"
+          CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Current version: $CURRENT_VERSION"
+
+          BASE_VERSION=${CURRENT_VERSION%-SNAPSHOT}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
 
           case "${{ github.event.inputs.release_type }}" in
-            major) major=$((major+1)); minor=0; patch=0 ;;
-            minor) minor=$((minor+1)); patch=0 ;;
-            patch) patch=$((patch+1)) ;;
+            major)
+              NEW_VERSION="$((MAJOR + 1)).0.0"
+              ;;
+            minor)
+              NEW_VERSION="$MAJOR.$((MINOR + 1)).0"
+              ;;
+            patch)
+              NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+              ;;
           esac
 
-          new="${major}.${minor}.${patch}"
-          echo "new_version=$new" >> $GITHUB_OUTPUT
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
 
       - name: Create release branch
         run: |
-          git checkout -b release/${{ steps.version.outputs.new_version }}
-          cd templates/java-rest-api
-          mvn versions:set -DnewVersion=${{ steps.version.outputs.new_version }} -DgenerateBackupPoms=false
-          git add pom.xml
-          git commit -m "chore: start release ${{ steps.version.outputs.new_version }}"
-          git push origin release/${{ steps.version.outputs.new_version }}
+          git fetch origin develop
+          git checkout develop
+          git pull origin develop
+          RELEASE_BRANCH="release/${{ steps.version.outputs.new_version }}"
+          git checkout -b "$RELEASE_BRANCH"
+          echo "RELEASE_BRANCH=$RELEASE_BRANCH" >> $GITHUB_ENV
 
-      - name: Trigger Stage deploy
+      - name: Update pom.xml version to release
+        run: |
+          cd "$PROJECT_DIR"
+          mvn versions:set -DnewVersion=${{ steps.version.outputs.new_version }} -B -q
+          mvn versions:commit -q
+          cd ../..
+          git add "$PROJECT_DIR/pom.xml"
+          git commit -m "chore: prepare release ${{ steps.version.outputs.new_version }}"
+          git push origin "$RELEASE_BRANCH"
+
+      - name: Trigger STAGE deployment workflow
         uses: peter-evans/workflow-dispatch@v3
         with:
-          workflow: release-deploy.yml
-          ref: release/${{ steps.version.outputs.new_version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          ref: ${{ env.RELEASE_BRANCH }}
+          workflow: java-rest-api-deploy.yaml
           inputs:
-            environment: stage
-            version: ${{ steps.version.outputs.new_version }}
+            environment: "stage"
