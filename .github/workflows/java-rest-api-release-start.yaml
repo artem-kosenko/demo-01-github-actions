@@ -76,12 +76,12 @@ jobs:
           git commit -m "chore: prepare release ${{ steps.version.outputs.new_version }}"
           git push origin "$RELEASE_BRANCH"
 
-      - name: Trigger STAGE deployment workflow
-        uses: peter-evans/workflow-dispatch@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          ref: ${{ env.RELEASE_BRANCH }}
-          workflow: java-rest-api-deploy.yaml
-        inputs:
-          environment: "stage"
+      # - name: Trigger STAGE deployment workflow
+      #   uses: peter-evans/workflow-dispatch@v3
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     repository: ${{ github.repository }}
+      #     ref: ${{ env.RELEASE_BRANCH }}
+      #     workflow: java-rest-api-deploy.yaml
+      #     inputs:
+      #       environment: "stage"
