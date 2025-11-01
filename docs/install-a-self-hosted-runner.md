@@ -7,22 +7,31 @@
 
 For macOS, the commands will look like this:
 
-## Download & Install
+## Download
 
 ```shell
 # Download
 mkdir ~/github-actions-runner && cd ~/github-actions-runner
 curl -o actions-runner-osx-arm64-2.329.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.329.0/actions-runner-osx-arm64-2.329.0.tar.gz
 tar xzf ./actions-runner-osx-arm64-2.329.0.tar.gz
+```
 
-# Install
+## Install
+
+```shell
+cd ~/github-actions-runner
 ./config.sh --url https://github.com/<your-org-or-user>/<your-repo> --token <your-runner-token>
+```
 
-# Run
+## Run
+
+```shell
+cd ~/github-actions-runner
 ./run.sh
 ```
 
 ## Update the Workflow to Use the Self-Hosted Runner
+
 Modify the runs-on key in your workflow to use the self-hosted runner:
 
 ```yaml

@@ -1,0 +1,66 @@
+name: Start Release (Docker)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Type of release"
+        required: true
+        type: choice
+        options: [patch, minor, major]
+
+jobs:
+  prepare:
+    runs-on: self-hosted
+    container:
+      image: maven:3.9.9-eclipse-temurin-17
+      env:
+        MAVEN_OPTS: "-Dmaven.repo.local=/root/.m2/repository"
+
+    steps:
+      - name: Checkout develop branch
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Configure Git identity
+        run: |
+          git config --global user.email "ci@github.actions"
+          git config --global user.name "GitHub Actions"
+
+      - name: Determine new version
+        id: version
+        working-directory: templates/java-rest-api
+        run: |
+          current=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Current version: $current"
+          base=${current%-SNAPSHOT}
+          IFS='.' read -r major minor patch <<< "$base"
+
+          case "${{ github.event.inputs.release_type }}" in
+            major) major=$((major+1)); minor=0; patch=0 ;;
+            minor) minor=$((minor+1)); patch=0 ;;
+            patch) patch=$((patch+1)) ;;
+          esac
+
+          new="${major}.${minor}.${patch}"
+          echo "new_version=$new" >> $GITHUB_OUTPUT
+
+      - name: Create release branch
+        run: |
+          git checkout -b release/${{ steps.version.outputs.new_version }}
+          cd templates/java-rest-api
+          mvn versions:set -DnewVersion=${{ steps.version.outputs.new_version }} -DgenerateBackupPoms=false
+          git add pom.xml
+          git commit -m "chore: start release ${{ steps.version.outputs.new_version }}"
+          git push origin release/${{ steps.version.outputs.new_version }}
+
+      - name: Trigger Stage deploy
+        uses: peter-evans/workflow-dispatch@v3
+        with:
+          workflow: release-deploy.yml
+          ref: release/${{ steps.version.outputs.new_version }}
+          inputs:
+            environment: stage
+            version: ${{ steps.version.outputs.new_version }}
