@@ -83,5 +83,5 @@ jobs:
           repository: ${{ github.repository }}
           ref: ${{ env.RELEASE_BRANCH }}
           workflow: java-rest-api-deploy.yaml
-          inputs:
-            environment: "stage"
+        inputs:
+          environment: "stage"
