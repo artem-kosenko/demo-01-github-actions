@@ -44,7 +44,7 @@ jobs:
     steps:
       - name: Debug vars
         run: |
-          echo ${{ needs.build.outputs.var-1 }}
+          echo $(echo ${{ needs.build.outputs.var-1 }} | base64 -d)
 
   # deploy:
   #   name: Deploy to DEV
