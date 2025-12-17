@@ -44,8 +44,8 @@ jobs:
       
       - name: Set var-2 (without issue)
         id: vars2
-        uses: ./actions/java-app-info
-  
+        uses: .github/actions/java-app-info
+        
       - name: Print var-2 (without issue)
         run: | 
           echo $VAR_2
