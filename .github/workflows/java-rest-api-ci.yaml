@@ -20,6 +20,8 @@ jobs:
   build:
     name: Build, Test & Package Docker
     runs-on: self-hosted
+    outputs:
+      var-1: ${{ steps.vars.outputs.var-1 }}
 
     steps:
       - name: Checkout repository
@@ -27,6 +29,22 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t my-java-rest-api:latest templates/java-rest-api
+      
+      - name: Set Vars
+        id: vars
+        run: |
+          VAR_1=uZem9Sow
+          echo var-1=$VAR_1 >> GITHUB_OUTPUT
+  
+  deploy:
+    name: Deploy
+    needs: [build]
+    runs-on: self-hosted
+
+    steps:
+      - name: Debug vars
+        run: |
+          echo ${{ needs.build.outputs.var-1 }}
 
   # deploy:
   #   name: Deploy to DEV
