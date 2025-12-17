@@ -45,8 +45,8 @@ jobs:
       - name: Set var-2 (without issue)
         id: vars
         run: |
-          VAR_1="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" 
-          echo var-1=$VAR_1 >> $GITHUB_OUTPUT
+          VAR_2="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" 
+          echo var-2=$VAR_1 >> $GITHUB_OUTPUT
   
   deploy:
     name: Deploy
