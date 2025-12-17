@@ -45,6 +45,8 @@ jobs:
       - name: Set var-2 (without issue)
         id: vars2
         uses: ./.github/actions/java-app-info
+        with:
+          pom-xml-path: templates/java-rest-api/pom.xml
 
       - name: Print var-2 (without issue)
         run: | 

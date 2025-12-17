@@ -1,14 +1,21 @@
 name: Get vars from pom.xml
+
+inputs:
+  pom-xml-path:
+    type: string
+    required: false
+    default: pom.xml
+
 runs:
   using: composite
   steps:
     - shell: bash
       run: |
         APP_VERSION=$(xmlstarlet sel -N x="http://maven.apache.org/POM/4.0.0" \
-          -t -v "/x:project/x:version" pom.xml)
+          -t -v "/x:project/x:version" ${{ inputs.pom-xml-path }})
 
         APP_VAR1=$(xmlstarlet sel -N x="http://maven.apache.org/POM/4.0.0" \
-          -t -v "/x:project/x:properties/x:var1" pom.xml)
+          -t -v "/x:project/x:properties/x:var1" ${{ inputs.pom-xml-path }})
 
         echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
         echo "APP_VAR1=$APP_VAR1" >> $GITHUB_ENV
