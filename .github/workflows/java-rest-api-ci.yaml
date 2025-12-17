@@ -19,7 +19,7 @@ on:
 jobs:
   build:
     name: Build, Test & Package Docker
-    runs-on: self-hosted
+    # runs-on: self-hosted
     outputs:
       var-1: ${{ steps.vars.outputs.var-1 }}
 
