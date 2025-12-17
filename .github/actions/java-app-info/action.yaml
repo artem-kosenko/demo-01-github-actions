@@ -11,11 +11,28 @@ runs:
   steps:
     - shell: bash
       run: |
+
+        APP_GROUP_ID=$(xmlstarlet sel -N x="http://maven.apache.org/POM/4.0.0" \
+          -t -v "/x:project/x:groupId" ${{ inputs.pom-xml-path }})
+
+        APP_ARTIFACT_ID=$(xmlstarlet sel -N x="http://maven.apache.org/POM/4.0.0" \
+          -t -v "/x:project/x:artifactId" ${{ inputs.pom-xml-path }})
+
         APP_VERSION=$(xmlstarlet sel -N x="http://maven.apache.org/POM/4.0.0" \
           -t -v "/x:project/x:version" ${{ inputs.pom-xml-path }})
 
+        APP_PACKAGING=$(xmlstarlet sel -N x="http://maven.apache.org/POM/4.0.0" \
+          -t -v "/x:project/x:packaging" ${{ inputs.pom-xml-path }})
+          
         APP_VAR1=$(xmlstarlet sel -N x="http://maven.apache.org/POM/4.0.0" \
           -t -v "/x:project/x:properties/x:var1" ${{ inputs.pom-xml-path }})
+        
+        APP_JAVA_VERSION=$(xmlstarlet sel -N x="http://maven.apache.org/POM/4.0.0" \
+          -t -v "/x:project/x:properties/x:java.version" ${{ inputs.pom-xml-path }})
 
+        echo "APP_GROUP_ID=$APP_GROUP_ID" >> $GITHUB_ENV
+        echo "APP_ARTIFACT_ID=$APP_ARTIFACT_ID" >> $GITHUB_ENV
         echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+        echo "APP_PACKAGING=$APP_PACKAGING" >> $GITHUB_ENV
         echo "APP_VAR1=$APP_VAR1" >> $GITHUB_ENV
+        echo "APP_JAVA_VERSION=$APP_JAVA_VERSION" >> $GITHUB_ENV

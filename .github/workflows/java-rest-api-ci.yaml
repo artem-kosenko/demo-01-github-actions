@@ -51,10 +51,13 @@ jobs:
 
       - name: Print Env Vars (without issue)
         run: | 
-          echo $APP_VERSION
-          echo $APP_VAR1
-          echo $APP_VERSION > /Users/lime/Projects/demo-github-actions/VAR1.txt
-          echo $APP_VAR1 >> /Users/lime/Projects/demo-github-actions/VAR1.txt
+          echo $APP_GROUP_ID=$APP_GROUP_ID
+          echo $APP_ARTIFACT_ID=$APP_ARTIFACT_ID
+          echo $APP_VERSION=$APP_VERSION
+          echo $APP_PACKAGING=$APP_PACKAGING
+          echo $APP_VAR1=$APP_VAR1
+          echo $APP_JAVA_VERSION=$APP_JAVA_VERSION
+
 
   # deploy:
   #   name: Deploy to DEV
