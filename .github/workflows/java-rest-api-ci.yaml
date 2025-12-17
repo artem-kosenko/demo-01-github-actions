@@ -34,7 +34,7 @@ jobs:
       - name: Set Vars
         id: vars
         run: |
-          VAR_1=$(echo "abc123" | base64)
+          VAR_1=69430b2a-50ac-8327-9a93-125799906ede
           echo var-1=$VAR_1 >> $GITHUB_OUTPUT
   
   deploy:
