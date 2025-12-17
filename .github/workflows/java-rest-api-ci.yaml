@@ -46,8 +46,11 @@ jobs:
         id: vars2
         run: |
           VAR_2="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" 
-          echo var-2=$VAR_1 >> $GITHUB_OUTPUT
+          echo "VAR_2=$VAR_2" >> $GITHUB_ENV
   
+      - name: Print var-2 (without issue)
+        run: | 
+          echo $VAR_2
   deploy:
     name: Deploy
     needs: [build]
