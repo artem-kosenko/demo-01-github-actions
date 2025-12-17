@@ -32,9 +32,10 @@ jobs:
       #   run: docker build -t my-java-rest-api:latest templates/java-rest-api
       
       - name: Set Vars
+        description: 100% cause an issue "Skip output 'var-1' since it may contain secret.
         id: vars
         run: |
-          VAR_1="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+          VAR_1="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" 
           echo var-1=$VAR_1 >> $GITHUB_OUTPUT
   
   deploy:
