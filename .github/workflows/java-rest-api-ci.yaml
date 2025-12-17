@@ -31,7 +31,7 @@ jobs:
       # - name: Build Docker image
       #   run: docker build -t my-java-rest-api:latest templates/java-rest-api
       
-      # 100% cause an issue "Skip output 'var-1' since it may contain secret.
+      # 100% cause an issue "Skip output 'var-1' since it may contain secret. But works inside a job.
       - name: Set var-1 (with issue)
         id: vars
         run: |
@@ -42,15 +42,16 @@ jobs:
         run:
           echo ${{ steps.vars.outputs.var-1 }}
       
-      - name: Set var-2 (without issue)
+      # no issue. works inside the job.
+      - name: Set VAR1 (without issue)
         id: vars2
         uses: ./.github/actions/java-app-info
         with:
           pom-xml-path: templates/java-rest-api/pom.xml
 
-      - name: Print var-2 (without issue)
+      - name: Print VAR1 (without issue)
         run: | 
-          echo $VAR_2
+          echo $VAR1
 
   # deploy:
   #   name: Deploy to DEV
