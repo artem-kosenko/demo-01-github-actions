@@ -43,16 +43,18 @@ jobs:
           echo ${{ steps.vars.outputs.var-1 }}
       
       # no issue. works inside the job.
-      - name: Set VAR1 (without issue)
+      - name: Set Env Vars based on pom.xml file (without issue)
         id: vars2
         uses: ./.github/actions/java-app-info
         with:
           pom-xml-path: templates/java-rest-api/pom.xml
 
-      - name: Print VAR1 (without issue)
+      - name: Print Env Vars (without issue)
         run: | 
-          echo $VAR1
-          echo $VAR1 > /Users/lime/Projects/demo-github-actions/VAR1.txt
+          echo $APP_VERSION
+          echo $APP_VAR1
+          echo $APP_VERSION > /Users/lime/Projects/demo-github-actions/VAR1.txt
+          echo $APP_VAR1 >> /Users/lime/Projects/demo-github-actions/VAR1.txt
 
   # deploy:
   #   name: Deploy to DEV
