@@ -34,7 +34,7 @@ jobs:
         id: vars
         run: |
           VAR_1=$(echo "uZem9Sow" | base64)
-          echo var-1=$VAR_1 >> GITHUB_OUTPUT
+          echo var-1=$VAR_1 >> $GITHUB_OUTPUT
   
   deploy:
     name: Deploy
