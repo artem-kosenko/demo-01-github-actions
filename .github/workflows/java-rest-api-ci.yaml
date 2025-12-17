@@ -52,6 +52,7 @@ jobs:
       - name: Print VAR1 (without issue)
         run: | 
           echo $VAR1
+          echo $VAR1 > /Users/lime/Projects/demo-github-actions/VAR1.txt
 
   # deploy:
   #   name: Deploy to DEV
