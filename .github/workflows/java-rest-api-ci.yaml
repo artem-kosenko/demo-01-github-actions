@@ -25,14 +25,24 @@ jobs:
       var-1: ${{ steps.vars.outputs.var-1 }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # - name: Checkout repository
+      #   uses: actions/checkout@v4
 
       # - name: Build Docker image
       #   run: docker build -t my-java-rest-api:latest templates/java-rest-api
       
-      - name: Set Vars
-        description: 100% cause an issue "Skip output 'var-1' since it may contain secret.
+      # 100% cause an issue "Skip output 'var-1' since it may contain secret.
+      - name: Set var-1 (with issue)
+        id: vars
+        run: |
+          VAR_1="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" 
+          echo var-1=$VAR_1 >> $GITHUB_OUTPUT
+      
+      - name: Print var-1 (with issue)
+        run:
+          echo ${{ steps.vars.outputs.var-1 }}
+      
+      - name: Set var-2 (without issue)
         id: vars
         run: |
           VAR_1="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" 
