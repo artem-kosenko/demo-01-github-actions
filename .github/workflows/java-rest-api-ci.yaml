@@ -27,13 +27,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t my-java-rest-api:latest templates/java-rest-api
+      # - name: Build Docker image
+      #   run: docker build -t my-java-rest-api:latest templates/java-rest-api
       
       - name: Set Vars
         id: vars
         run: |
-          VAR_1=uZem9Sow
+          VAR_1=$(echo "uZem9Sow" | base64)
           echo var-1=$VAR_1 >> GITHUB_OUTPUT
   
   deploy:
